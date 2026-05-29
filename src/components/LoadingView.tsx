@@ -2,10 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
+import { AppLanguageCode } from '../types';
+import { getLanguageOption } from '../i18n/languages';
 
-export const LoadingView = () => {
+interface Props {
+  languageCode: AppLanguageCode;
+}
+
+export const LoadingView = ({ languageCode }: Props) => {
+  const { ui } = getLanguageOption(languageCode);
   const [textIndex, setTextIndex] = useState(0);
-  const texts = ["Interpreting Symbols...", "Consulting Jung...", "Painting the Dreamscape..."];
+  const texts = ui.loadingTexts;
   
   const opacity = useSharedValue(0.5);
 
@@ -15,7 +22,7 @@ export const LoadingView = () => {
       setTextIndex((prev) => (prev + 1) % texts.length);
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [texts.length]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value

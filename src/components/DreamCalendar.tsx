@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getDreamHistory } from '../services/storageService';
-import { SavedDream } from '../types';
+import { AppLanguageCode, SavedDream } from '../types';
+import { getLanguageOption } from '../i18n/languages';
 
 interface Props {
   onBack: () => void;
   onSelectDream: (dream: SavedDream) => void;
+  languageCode: AppLanguageCode;
 }
 
-export const DreamCalendar = ({ onBack, onSelectDream }: Props) => {
+export const DreamCalendar = ({ onBack, onSelectDream, languageCode }: Props) => {
+  const language = getLanguageOption(languageCode);
+  const { ui } = language;
   const [history, setHistory] = useState<SavedDream[]>([]);
 
   useEffect(() => {
@@ -17,7 +21,7 @@ export const DreamCalendar = ({ onBack, onSelectDream }: Props) => {
   }, []);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString(undefined, { 
+    return new Date(timestamp).toLocaleDateString(language.locale, {
       month: 'short', day: 'numeric', year: 'numeric' 
     });
   };
@@ -28,13 +32,13 @@ export const DreamCalendar = ({ onBack, onSelectDream }: Props) => {
         <TouchableOpacity onPress={onBack} className="p-2 -ml-2">
           <MaterialCommunityIcons name="arrow-left" size={28} color="#a5b4fc" />
         </TouchableOpacity>
-        <Text className="text-white font-serif text-3xl ml-4">Dream History</Text>
+        <Text className="text-white font-serif text-3xl ml-4">{ui.historyTitle}</Text>
       </View>
 
       {history.length === 0 ? (
         <View className="flex-1 items-center justify-center">
           <MaterialCommunityIcons name="book-open-page-variant" size={64} color="#334155" />
-          <Text className="text-slate-500 font-sans text-center mt-4">No dreams recorded yet.</Text>
+          <Text className="text-slate-500 font-sans text-center mt-4">{ui.noDreams}</Text>
         </View>
       ) : (
         <FlatList

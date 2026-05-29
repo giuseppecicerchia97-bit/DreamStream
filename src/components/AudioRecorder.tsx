@@ -3,9 +3,12 @@ import { TouchableOpacity, View, Text } from 'react-native';
 import { Audio } from 'expo-av';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { AppLanguageCode } from '../types';
+import { getLanguageOption } from '../i18n/languages';
 
 interface Props {
   onRecordingComplete: (uri: string) => void;
+  languageCode: AppLanguageCode;
 }
 
 let preparedRecording: Audio.Recording | null = null;
@@ -25,9 +28,10 @@ const unloadPreparedRecording = async () => {
   }
 };
 
-export const AudioRecorder = ({ onRecordingComplete }: Props) => {
+export const AudioRecorder = ({ onRecordingComplete, languageCode }: Props) => {
+  const { ui } = getLanguageOption(languageCode);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [message, setMessage] = useState('Hold to record your dream');
+  const [message, setMessage] = useState(ui.holdToRecord);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const isMountedRef = useRef(true);
   const isStartingRef = useRef(false);
@@ -59,10 +63,16 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
     recordingRef.current = null;
     if (isMountedRef.current) {
       setRecording(null);
-      setMessage('Hold to record your dream');
+      setMessage(ui.holdToRecord);
     }
     pulseScale.value = withTiming(1);
   };
+
+  useEffect(() => {
+    if (!recordingRef.current && !isStartingRef.current && !isStoppingRef.current) {
+      setMessage(ui.holdToRecord);
+    }
+  }, [ui.holdToRecord]);
 
   useEffect(() => {
     return () => {
@@ -85,7 +95,7 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
 
     isStartingRef.current = true;
     shouldStopAfterStartRef.current = false;
-    setMessage('Starting recording...');
+    setMessage(ui.startingRecording);
 
     try {
       const permission = await Audio.requestPermissionsAsync();
@@ -107,7 +117,7 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
 
         recordingRef.current = newRecording;
         setRecording(newRecording);
-        setMessage('Release to analyze dream...');
+        setMessage(ui.releaseToAnalyze);
         pulseScale.value = withRepeat(
           withSequence(withTiming(1.2, { duration: 800 }), withTiming(1, { duration: 800 })),
           -1,
@@ -120,7 +130,7 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
           return;
         }
       } else {
-        setMessage('Microphone permission is required');
+        setMessage(ui.microphoneRequired);
       }
     } catch (err) {
       resetRecorderState();
@@ -148,7 +158,7 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
     isStoppingRef.current = true;
     recordingRef.current = null;
     setRecording(null);
-    setMessage('Preparing your dream...');
+    setMessage(ui.preparingDream);
     pulseScale.value = withTiming(1);
 
     try {
@@ -159,10 +169,10 @@ export const AudioRecorder = ({ onRecordingComplete }: Props) => {
       }
 
       if (isShortRecordingError(err)) {
-        setMessage('Recording was too short. Hold a little longer.');
+        setMessage(ui.recordingTooShort);
       } else {
         console.warn('Failed to stop recording', err);
-        setMessage('Recording failed. Please try again.');
+        setMessage(ui.recordingFailed);
       }
     } finally {
       isStoppingRef.current = false;

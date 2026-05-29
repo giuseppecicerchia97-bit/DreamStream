@@ -1,9 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DreamAnalysis, SavedDream } from '../types';
+import { DreamAnalysis, AppLanguageCode, SavedDream } from '../types';
+import { DEFAULT_LANGUAGE_CODE, isAppLanguageCode } from '../i18n/languages';
 
 const DREAM_HISTORY_KEY = '@dream_history';
+const LANGUAGE_KEY = '@dream_language';
 
-export const saveDream = async (dream: DreamAnalysis, imageUrl: string | null): Promise<void> => {
+export const saveDream = async (
+  dream: DreamAnalysis,
+  imageUrl: string | null,
+  languageCode?: AppLanguageCode
+): Promise<void> => {
   try {
     const existingHistoryStr = await AsyncStorage.getItem(DREAM_HISTORY_KEY);
     const existingHistory: SavedDream[] = existingHistoryStr ? JSON.parse(existingHistoryStr) : [];
@@ -13,6 +19,7 @@ export const saveDream = async (dream: DreamAnalysis, imageUrl: string | null): 
       id: Date.now().toString(),
       imageUrl,
       timestamp: Date.now(),
+      languageCode,
     };
     
     const updatedHistory = [newDream, ...existingHistory];
@@ -36,4 +43,18 @@ export const getDreamHistory = async (): Promise<SavedDream[]> => {
     console.error('Failed to fetch dream history:', error);
     return [];
   }
+};
+
+export const saveLanguagePreference = async (languageCode: AppLanguageCode): Promise<void> => {
+  await AsyncStorage.setItem(LANGUAGE_KEY, languageCode);
+};
+
+export const getLanguagePreference = async (): Promise<AppLanguageCode> => {
+  const storedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
+
+  if (isAppLanguageCode(storedLanguage)) {
+    return storedLanguage;
+  }
+
+  return DEFAULT_LANGUAGE_CODE;
 };
